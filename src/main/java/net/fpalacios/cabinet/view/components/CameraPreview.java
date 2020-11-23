@@ -1,6 +1,5 @@
 package net.fpalacios.cabinet.view.components;
 
-import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.BorderLayout;
 import java.awt.event.MouseEvent;
@@ -58,7 +57,7 @@ public class CameraPreview extends JComponent implements MouseListener
 	{
 		super.paintComponent(g);
 
-		if ( this.cameraPnl.isEmpty() )
+		if ( !this.cameraPnl.isPresent() )
 		{
 			g.drawImage(this.defaulImage, 0, 0, this.getWidth(), this.getHeight(), null);
 		}
