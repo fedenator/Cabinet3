@@ -8,67 +8,70 @@ import java.awt.Rectangle;
 
 import javax.swing.JComponent;
 
-import net.fpalacios.cabinet.flibs.graphics.animation.Animation;
 import net.fpalacios.cabinet.flibs.graphics.animation.AnimationChain;
 import net.fpalacios.cabinet.flibs.graphics.animation.CodedAnimation;
 
 /**
  * Un panel arriba de todos los componentes que hace un efecto de flash
  */
-public class FlashingGlassPane extends JComponent{
-
-	/*----------------------------- Constantes --------------------------------*/
-	//Id pito corto
+public class FlashingGlassPane extends JComponent
+{
 	private static final long serialVersionUID = 4578358888612473977L;
 
-	//Duracion de la animacion en milisegundos
+	// Duracion de la animacion en milisegundos
 	private static final int ANIMATION_TIME = 200;
 
-	//Valor de transparencia maxima del alpha
+	// Valor de transparencia maxima del alpha
 	private static final float MAX_ALPHA_VALUE = 1f;
 
-	//Actualizaciones por segundo
+	// Actualizaciones por segundo
 	private static final int FPS = 60;
 
-	/*------------------------------ Atributos --------------------------------*/
-	//Valor del alpha(transparencia) 0=transparente ... 1=opaco
+	// Valor del alpha(transparencia) 0=transparente ... 1=opaco
 	private float alphaValue  = 0;
 
-	//Animaciones
+	// Animaciones
 	private CodedAnimation increasingAnimation = new CodedAnimation(FPS, ANIMATION_TIME / 2);
 	private CodedAnimation decreasingAnimation = new CodedAnimation(FPS, ANIMATION_TIME / 2);
-	private AnimationChain chain = new AnimationChain(increasingAnimation, decreasingAnimation);
+	public  AnimationChain animation = new AnimationChain(increasingAnimation, decreasingAnimation);
 
-	//Cuanto tiene que cambiar el alpha por frame
+	// Cuanto tiene que cambiar el alpha por frame
 	private float alphaVariance =  MAX_ALPHA_VALUE / increasingAnimation.getLoopCap();
 
-	/*----------------------------- Constructores -----------------------------*/
-	public FlashingGlassPane() {
-		setBackground(Color.WHITE);
-		setOpaque(false);
+	public FlashingGlassPane()
+	{
+		this.setBackground(Color.WHITE);
+		this.setOpaque(false);
 
-		increasingAnimation.setLoop( () -> {
-			float nextAlpha = alphaValue + alphaVariance;
-			alphaValue = (nextAlpha >= MAX_ALPHA_VALUE)? MAX_ALPHA_VALUE : nextAlpha;
-			repaint();
-		});
+		this.increasingAnimation.setLoop(
+			() ->
+			{
+				float nextAlpha = alphaValue + alphaVariance;
+				this.alphaValue = (nextAlpha >= MAX_ALPHA_VALUE)? MAX_ALPHA_VALUE : nextAlpha;
+				this.repaint();
+			}
+		);
 
-		decreasingAnimation.setLoop( () -> {
-			float nextAlpha = alphaValue - alphaVariance;
-			alphaValue = (nextAlpha <= 0)? 0 : nextAlpha;
-			repaint();
-		});
+		this.decreasingAnimation.setLoop(
+			() ->
+			{
+				float nextAlpha = alphaValue - alphaVariance;
+				this.alphaValue = (nextAlpha <= 0)? 0 : nextAlpha;
+				this.repaint();
+			}
+		);
 	}
 
-	/*----------------------------- Funciones ---------------------------------*/
 	/**
-	 * Start flash animation
+	 * Iniciar flash animation
 	 */
-	public void doFlashAnimation() {
-		chain.start();
+	public void doFlashAnimation()
+	{
+		this.animation.start();
 	}
 
-	protected void paintComponent(Graphics g) {
+	protected void paintComponent(Graphics g)
+	{
 		super.paintComponent(g);
 
 		//Creamos un graphics para cambiarle el estado
@@ -83,10 +86,5 @@ public class FlashingGlassPane extends JComponent{
 		//Y pintamos el area que se nos pidio que pintemos
 		Rectangle clip = g.getClipBounds();
 		g2d.fillRect(clip.x, clip.y, clip.width, clip.height);
-	}
-
-	/*--------------------------- Getter & Setters ----------------------------*/
-	public Animation getAnimation() {
-		return chain;
 	}
 }

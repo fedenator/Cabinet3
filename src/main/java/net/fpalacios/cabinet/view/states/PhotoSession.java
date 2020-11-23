@@ -11,7 +11,9 @@ import javax.swing.JComponent;
 import javax.swing.JLayeredPane;
 import javax.swing.KeyStroke;
 
+import net.fpalacios.cabinet.Main;
 import net.fpalacios.cabinet.camera.FCam;
+import net.fpalacios.cabinet.camera.FCamDebug;
 import net.fpalacios.cabinet.camera.FCamOpenCV;
 
 import net.fpalacios.cabinet.flibs.fson.FSON;
@@ -34,151 +36,155 @@ import net.fpalacios.cabinet.view.components.PhotoDisplayer;
 /**
  * Estado donde se sacan las fotos
  */
-public class PhotoSession extends JLayeredPane {
-
-	/*---------------------------- Constantes ----------------------------------------*/
-	//Id pito corto
+public class PhotoSession extends JLayeredPane
+{
 	private static final long serialVersionUID = -3298912502204354233L;
 
-	/*----------------------------- Atributos ----------------------------------------*/
 	private long delay;
 
-	//Displayer para las fotos que se sacan
+	// Displayer para las fotos que se sacan
 	private PhotoDisplayer photoDisplayer1;
 	private PhotoDisplayer photoDisplayer2;
 	private PhotoDisplayer photoDisplayer3;
 
-	private CameraPreview cameraPreview;           //El previsualizador de la camara
+	private CameraPreview cameraPreview;           // El previsualizador de la camara
 
-	private CountdownDisplayer countdownDisplayer; //Muestra la cuenta regresiva para las fotos
+	private CountdownDisplayer countdownDisplayer; // Muestra la cuenta regresiva para las fotos
 
-	private FlashingGlassPane fglassPane;          //Panel que cubre la ventana que hace la animacion de flasheo
+	private FlashingGlassPane fglassPane;          // Panel que cubre la ventana que hace la animacion de flasheo
 
-	private AnimationChain animation;              //Animaciones de cuando sacas las fotos
-	private CodedAnimation countdown;              //Animacion de cuenta regresiva
+	private AnimationChain animation;              // Animaciones de cuando sacas las fotos
+	private CodedAnimation countdown;              // Animacion de cuenta regresiva
 
 	private BufferedImage backgroundImage;
 
-	private Application app;
-
-	/*--------------------------- Constructores --------------------------------------*/
-	public PhotoSession() {
-		app = Application.getInstance();
-
+	public PhotoSession()
+	{
 		FSON config = null;
 		String takePhotosKey = null;
 
 		int cameraId = 0;
 
 		BufferedImage defaultPhotoDisplayerImg = null;
+
 		//Load configuration
-		try {
+		try
+		{
 			config = FsonFileManagement.loadFsonFile("config/Config.fson");
 			takePhotosKey = config.getStringValue("teclaSacarFotos").toUpperCase();
-			delay = (int)config.getDoubleValue("delay") * CodedAnimation.SECOND;
+			this.delay = (int)config.getDoubleValue("delay") * CodedAnimation.SECOND;
 			defaultPhotoDisplayerImg = Loader.loadBufferedImage( config.getStringValue("PhotoDisplayerDefault") );
-			backgroundImage = Loader.loadBufferedImage( config.getStringValue("BackgroundImage") );
+			this.backgroundImage = Loader.loadBufferedImage( config.getStringValue("BackgroundImage") );
 			cameraId = config.getIntValue("camara");
-		} catch (IOException e) {
+		}
+		catch (IOException e)
+		{
 			ErrorHandler.fatal("Error loading PhotoSession configuration.", e);
 		}
 
-		FCam fcam = null;
-		try {
-			fcam = loadCamera (config.getBooleanValue("modoSinCamara"), cameraId);
-		} catch(URISyntaxException | IOException e) {
+		FCam camera = null;
+		try
+		{
+			camera = loadCamera(config.getBooleanValue("modoSinCamara"), cameraId);
+		}
+		catch(URISyntaxException | IOException e)
+		{
 			ErrorHandler.fatal("Error loading camera.", e);
 		}
 
 		/*------------------------------ Crea y agrega el GUI --------------------------------*/
-		fglassPane = new FlashingGlassPane();
-		app.setGlassPane(fglassPane);
+		this.fglassPane = new FlashingGlassPane();
+		Main.setGlassPane(this.fglassPane);
 
 		this.setLayout(null);
 
-		ActionFactory.addActionToKeyStroke(this, "takePhotos", takePhotosKey, () -> takePhotos() );
+		ActionFactory.addActionToKeyStroke(this, "takePhotos", takePhotosKey, () -> this.takePhotos() );
 
 		this.getInputMap().put(KeyStroke.getKeyStroke(takePhotosKey), "takePhotos");
-		this.getActionMap().put("takePhotos", ActionFactory.basic( () -> takePhotos() ));
+		this.getActionMap().put( "takePhotos", ActionFactory.basic( () -> this.takePhotos() ) );
 
-		photoDisplayer1 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 10, 442, 242);
-		photoDisplayer2 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 262, 442, 242);
-		photoDisplayer3 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 516, 442, 242);
-		cameraPreview = new CameraPreview(this, fcam, 462, 10, 894, 748);
-		countdownDisplayer = new CountdownDisplayer(delay, (int)(app.getWidth()/2 - 200/2), (int)(app.getHeight()/2 - 200/2), 200, 200);
+		this.photoDisplayer1 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 10, 442, 242);
+		this.photoDisplayer2 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 262, 442, 242);
+		this.photoDisplayer3 = new PhotoDisplayer(this, defaultPhotoDisplayerImg, 10, 516, 442, 242);
+		this.cameraPreview = new CameraPreview(this, camera, 462, 10, 894, 748);
+		this.countdownDisplayer = new CountdownDisplayer(
+			this.delay,
+			(int) (Main.getWidth()  / 2 - 200 / 2),
+			(int) (Main.getHeight() / 2 - 200 / 2),
+			200,
+			200
+		);
 
-		add(photoDisplayer1, photoDisplayer2, photoDisplayer3, cameraPreview);
-		add(countdownDisplayer, POPUP_LAYER);
+		this.add(photoDisplayer1, photoDisplayer2, photoDisplayer3, cameraPreview);
+		this.add(countdownDisplayer, POPUP_LAYER);
 
-		countdown = new CodedAnimation(60, delay);
+		this.countdown = new CodedAnimation(60, delay);
 
-		countdown.addSetUP( () -> countdownDisplayer.restart() );
+		this.countdown.addSetup( () -> countdownDisplayer.restart() );
 
-		countdown.setLoop( () -> countdownDisplayer.addTime(countdown.getDelay()) );
+		this.countdown.setLoop( () -> countdownDisplayer.addTime( this.countdown.getDelay() ) );
 
-		countdown.addFinisher( () -> countdownDisplayer.fhide() );
+		this.countdown.addFinisher( () -> countdownDisplayer.fhide() );
 
-		//Crea la animacion de sacar fotos
-		animation = new AnimationChain(
-				countdown,
-				new ParallelAnimation(
-						new ScriptAnimation( () -> photoDisplayer1.setImage(cameraPreview.getSnapShot()) ),
-						photoDisplayer1.getAnimation(),
-						fglassPane.getAnimation()
-				),
-				countdown,
-				new ParallelAnimation(
-						new ScriptAnimation( () -> photoDisplayer2.setImage(cameraPreview.getSnapShot()) ),
-						photoDisplayer2.getAnimation(),
-						fglassPane.getAnimation()
-				),
-				countdown,
-				new ParallelAnimation(
-						new ScriptAnimation( () -> photoDisplayer3.setImage(cameraPreview.getSnapShot()) ),
-						photoDisplayer3.getAnimation(),
-						fglassPane.getAnimation()
-				),
-				new ScriptAnimation( () -> app.makeFilmStrip(photoDisplayer1.getImage(), photoDisplayer2.getImage(), photoDisplayer3.getImage()) )
-				);
+		// Crea la animacion de sacar fotos
+		this.animation = new AnimationChain(
+			this.countdown,
+			new ParallelAnimation(
+					new ScriptAnimation(() -> this.photoDisplayer1.image = this.cameraPreview.snapshot),
+					this.photoDisplayer1.animation,
+					this.fglassPane.animation
+			),
+			this.countdown,
+			new ParallelAnimation(
+					new ScriptAnimation(() -> this.photoDisplayer2.image = this.cameraPreview.snapshot),
+					this.photoDisplayer2.animation,
+					this.fglassPane.animation
+			),
+			this.countdown,
+			new ParallelAnimation(
+					new ScriptAnimation(() -> this.photoDisplayer3.image = this.cameraPreview.snapshot),
+					this.photoDisplayer3.animation,
+					this.fglassPane.animation
+			),
+			new ScriptAnimation(
+				() ->
+				{
+					Main.makeFilmStrip(
+						this.photoDisplayer1.image,
+						this.photoDisplayer2.image,
+						this.photoDisplayer3.image
+					);
+				} 
+			)
+		);
 
 	}
 
-	/*--------------------------------- Funciones ------------------------------------*/
-
-	private FCam loadCamera(boolean cameraDebug, int cameraId) throws URISyntaxException, IOException {
-		return new FCamOpenCV(cameraId);
-
-		// int osBits = Sys.geyOSBytes();
-		// Sys.OS os = Sys.getOS();
-
-		// if (cameraDebug) {
-		// 	flag = new FCamDebug("rsc/Example.jpg");
-		// } else {
-		// 	if (os == Sys.OS.LINUX)
-		// 		flag = new FCamOpenCV(cameraId, "lib/libopencv_java330.so");
-		// 	else
-		// 		flag = new FCamOpenCV(cameraId, "lib/opencv_java320x"+osBits+".dll");
-		// }
-
-		// return flag;
+	private FCam loadCamera(boolean cameraDebug, int cameraId) throws URISyntaxException, IOException
+	{
+		if (cameraDebug)
+			return new FCamDebug("rsc/Example.jpg");
+		else
+			return new FCamOpenCV(cameraId);
 	}
 
-	protected void paintComponent(Graphics g) {
+	protected void paintComponent(Graphics g)
+	{
 		super.paintComponent(g);
-		g.drawImage(backgroundImage, 0, 0, null);
+		g.drawImage(this.backgroundImage, 0, 0, null);
 	}
 
-	//Un atajo para añadir las cosas mas simple
-	private void add(JComponent... components) {
-		for (JComponent c : components) {
-			add(c, DEFAULT_LAYER);
+	// Un atajo para añadir las cosas mas simple
+	private void add(JComponent... components)
+	{
+		for (JComponent c : components)
+		{
+			this.add(c, DEFAULT_LAYER);
 		}
 	}
 
-	/**
-	 * Hace flashear el glassPane
-	 */
-	public void takePhotos() {
-		animation.start();
+	public void takePhotos()
+	{
+		this.animation.start();
 	}
 }

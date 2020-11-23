@@ -76,7 +76,7 @@ public class CodedAnimation extends Animation{
 	 * Funcion que se va a ejecutar al iniciar
 	 * Puede ser null
 	 */
-	public void addSetUP(Runnable setUp) {
+	public void addSetup(Runnable setUp) {
 		this.setUps.add(setUp);
 	}
 	

@@ -5,21 +5,22 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 
-public class ImageDisplayer extends JComponent{
-
+public class ImageDisplayer extends JComponent
+{
 	private static final long serialVersionUID = 1L;
 	
 	private BufferedImage image;
 	
-	public ImageDisplayer(BufferedImage image, int x, int y, int w, int h) {
+	public ImageDisplayer(BufferedImage image, int x, int y, int w, int h)
+	{
 		this.image = image;
-		setBounds(x, y, w, h);
+		this.setBounds(x, y, w, h);
 	}
 	
 	@Override
-	protected void paintComponent(Graphics g) {
+	protected void paintComponent(Graphics g)
+	{
 		super.paintComponent(g);
-		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
-		
+		g.drawImage(this.image, 0, 0, this.getWidth(), this.getHeight(), null);
 	}
 }

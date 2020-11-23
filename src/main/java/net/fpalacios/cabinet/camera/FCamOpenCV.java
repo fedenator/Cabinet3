@@ -12,43 +12,44 @@ import net.fpalacios.cabinet.flibs.util.Loader;
  * Capturador de camara que usa OpenCV y trabaja con concurrencia
  * Captura todo el tiempo la camara y va dejando la ultima captura procesada guardada para devolver
  */
-public class FCamOpenCV implements Runnable, FCam {
-
-	/*--------------------------- Propiedades --------------------------------------*/
+public class FCamOpenCV implements FCam
+{
 	private final Webcam camera;
 
-	//Hilo de procesamiento en donde se va caputrando la camara
-	private Thread thread = new Thread(this);
-
 	//Ultima captura procesada
-	private volatile BufferedImage image;
+	private BufferedImage image;
 
-	/*-------------------------------- Constructores ---------------------------------*/
-	/**
-	 * Crea una capturador para la camara dada,
-	 */
-	public FCamOpenCV(int cammera) throws URISyntaxException {
-		// //Obtiene la direccion del jar
-		// File jarDir = new File(FCamOpenCV.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile();
-		// String path = jarDir.getAbsolutePath();
+	public FCamOpenCV(int camera) throws URISyntaxException
+	{
+		this.camera = Webcam.getWebcams().get(camera);
 
-		// //Carga la libreria de OpenCV
-		// path += "/" + pathLib;
-		// System.out.println(path);
-		// System.load(path);
+		//Toma una captura cada 30 milisegundos
+		new Thread(
+			() ->
+			{
+				this.camera.open();
 
-		// //Abre la camara
-		// camera = new VideoCapture(cammera);
+				while (true)
+				{
+					this.image = Loader.convertToCompatibleImage(this.takeSnapShot());
 
-		this.camera = Webcam.getDefault();
-
-		thread.start();
+					try
+					{
+						Thread.sleep(30);
+					}
+					catch (InterruptedException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+		).start();
 	}
 
-	/*--------------------------------------- Funciones -----------------------------*/
 	/**
 	 * Devuelva la ultima captura de la camaraprocesada
 	 */
+	@Override
 	public BufferedImage getSnapShot()
 	{
 		return this.image;
@@ -58,20 +59,4 @@ public class FCamOpenCV implements Runnable, FCam {
 	{
 		return camera.getImage();
 	}
-
-    //Toma una captura cada 30 milisegundos
-	public void run() {
-		this.camera.open();
-
-		while (true) {
-			BufferedImage buffer = Loader.convertToCompatibleImage(this.takeSnapShot());
-			image = buffer;
-			try {
-				Thread.sleep(30);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
 }

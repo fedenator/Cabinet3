@@ -14,74 +14,95 @@ import net.fpalacios.cabinet.view.states.PhotoSession;
 /**
  * Componente que muestra lo que esta viendo la camara
  */
-public class CameraPreview extends JComponent implements Runnable, MouseListener{
-	
-	/*--------------------------- Constantes ------------------------------*/
-	//Id pija corta
+public class CameraPreview extends JComponent implements MouseListener
+{
 	private static final long serialVersionUID = 6777059407593823792L;
 	
-	/*---------------------------- Atributos ------------------------------*/
-	private FCam fcam;                 //Objeto que representa la camara
-	private BufferedImage img;         //Ultima imagen que se saco
-	private PhotoSession photoSession;
+	private FCam          camera;       // Objeto que representa la camara
+	private PhotoSession  photoSession;
+
+	public  BufferedImage snapshot;     // Ultima imagen que se saco
 	
-	/*--------------------------- Constructores ---------------------------*/
-	public CameraPreview(PhotoSession photoSession, FCam fcam, int x, int y, int width, int height) {
+	public CameraPreview(PhotoSession photoSession, FCam camera, int x, int y, int width, int height)
+	{
 		
 		this.photoSession = photoSession;
-		this.fcam = fcam;
-		this.img = fcam.getSnapShot();
+		this.camera       = camera;
+		this.snapshot     = camera.getSnapShot();
 		
-		EventQueue.invokeLater( () -> {
-			this.setBounds(x, y, width, height);
-		});
+		EventQueue.invokeLater(
+			() ->
+			{
+				this.setBounds(x, y, width, height);
+			}
+		);
 		
-		new Thread(this).start();
-		this.addMouseListener(this);
-	}
-	
-	/*--------------------------- Funciones -------------------------------*/
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		if (img != null) g.drawImage(img, 0, 0, getWidth(), getHeight(), null);
-	}
-	
-	//Controla el tiempo de las animaciones
-	public void run() {
-		
-		while (true) {
-			EventQueue.invokeLater( () -> {
-				if (getWidth() > 0 && getHeight() > 0) {
-					BufferedImage snapshot = fcam.getSnapShot();
-					if (snapshot != null) {
-						 img = snapshot;
-						repaint();
+		new Thread(
+			() ->
+			{
+				while (true)
+				{
+					this.updateSnapshot();
+					try
+					{
+						Thread.sleep(30);
+					}
+					catch (InterruptedException e)
+					{
+						e.printStackTrace();
 					}
 				}
-			});
-			try                 { Thread.sleep(30); }
-			catch (Exception e) { e.printStackTrace(); }
-		}
+			}
+		).start();
+		
+		this.addMouseListener(this);
 	}
 
-	/*----------------------------- Listeners -----------------------------*/
-	public void mouseClicked(MouseEvent e) {
-		if ( !e.isConsumed() && e.getSource() == this) {
-			photoSession.takePhotos();
+	private void updateSnapshot()
+	{
+		EventQueue.invokeLater(
+			() ->
+			{
+				// Si el componente está inicializado
+				if (this.getWidth() > 0 && this.getHeight() > 0)
+				{
+					BufferedImage newSnapshot = this.camera.getSnapShot();
+					if (snapshot != null)
+					{
+						this.snapshot = newSnapshot;
+						this.repaint();
+					}
+				}
+			}
+		);
+	}
+	
+	protected void paintComponent(Graphics g)
+	{
+		super.paintComponent(g);
+		if (this.snapshot != null)
+		{
+			g.drawImage(this.snapshot, 0, 0, this.getWidth(), this.getHeight(), null);
+		}
+	}
+	
+	/*----------------------------- Mouse Listener -----------------------------*/
+	@Override
+	public void mouseClicked(MouseEvent e)
+	{
+		if ( !e.isConsumed() && e.getSource() == this)
+		{
+			this.photoSession.takePhotos();
 			e.consume();
 		}
 	}
 
+	@Override
 	public void mouseEntered(MouseEvent e) {}
-
+	@Override
 	public void mouseExited(MouseEvent e) {}
-
+	@Override
 	public void mousePressed(MouseEvent e) {}
-
+	@Override
 	public void mouseReleased(MouseEvent e) {}
-	
-	/*-------------------------- Getters & Setters --------------------------*/
-	public BufferedImage getSnapShot() {
-		return img;
-	}
 }
