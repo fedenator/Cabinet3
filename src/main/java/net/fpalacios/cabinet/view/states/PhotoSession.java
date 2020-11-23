@@ -10,6 +10,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.KeyStroke;
 
 import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamResolution;
 
 import net.fpalacios.cabinet.Main;
 
@@ -62,6 +63,7 @@ public class PhotoSession extends JLayeredPane
 		FSON config = null;
 		String takePhotosKey = null;
 		this.camera = Optional.ofNullable(Webcam.getDefault());
+		this.camera.ifPresent( (c) -> c.setViewSize(WebcamResolution.VGA.getSize() ) );
 
 		//Load configuration
 		try
