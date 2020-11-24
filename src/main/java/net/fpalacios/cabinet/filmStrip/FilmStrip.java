@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import net.fpalacios.cabinet.flibs.fson.FSON;
 
 import net.fpalacios.cabinet.flibs.util.FMath;
-import net.fpalacios.cabinet.flibs.util.Loader;
+import net.fpalacios.cabinet.Loader;
 
 import java.io.IOException;
 

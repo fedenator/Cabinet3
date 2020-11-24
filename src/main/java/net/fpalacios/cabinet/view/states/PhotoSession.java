@@ -1,6 +1,7 @@
 package net.fpalacios.cabinet.view.states;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Optional;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -11,8 +12,13 @@ import javax.swing.KeyStroke;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamResolution;
+import com.github.sarxos.webcam.ds.ipcam.IpCamDevice;
+import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
+import com.github.sarxos.webcam.ds.ipcam.IpCamDriver;
+import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
 
 import net.fpalacios.cabinet.Main;
+import net.fpalacios.cabinet.Loader;
 
 import net.fpalacios.cabinet.flibs.fson.FSON;
 import net.fpalacios.cabinet.flibs.fson.FsonFileManagement;
@@ -24,7 +30,6 @@ import net.fpalacios.cabinet.flibs.graphics.animation.ScriptAnimation;
 
 import net.fpalacios.cabinet.flibs.util.ActionFactory;
 import net.fpalacios.cabinet.flibs.util.ErrorHandler;
-import net.fpalacios.cabinet.flibs.util.Loader;
 import net.fpalacios.cabinet.view.components.CameraPreview;
 import net.fpalacios.cabinet.view.components.CountdownDisplayer;
 import net.fpalacios.cabinet.view.components.FlashingGlassPane;
@@ -62,8 +67,7 @@ public class PhotoSession extends JLayeredPane
 	{
 		FSON config = null;
 		String takePhotosKey = null;
-		this.camera = Optional.ofNullable(Webcam.getDefault());
-		this.camera.ifPresent( (c) -> c.setViewSize(WebcamResolution.VGA.getSize() ) );
+		this.initCamera();
 
 		//Load configuration
 		try
@@ -142,6 +146,33 @@ public class PhotoSession extends JLayeredPane
 					);
 				} 
 			)
+		);
+	}
+
+	private void initCamera()
+	{
+		Webcam.setDriver(new IpCamDriver());
+		try
+		{
+			IpCamDeviceRegistry.register(new IpCamDevice("Celular", "http://192.168.0.101:8080/video", IpCamMode.PUSH));
+		}
+		catch (MalformedURLException e)
+		{
+			throw new RuntimeException(e);
+		}
+
+
+		this.camera = Optional.ofNullable(Webcam.getDefault());
+		System.out.println("camera: " + camera);
+		this.camera.ifPresent(
+			(c) ->
+			{
+				System.out.println("a");
+				c.setViewSize(WebcamResolution.HD720.getSize());
+				System.out.println("b");
+				c.open();
+				System.out.println("c");
+			}
 		);
 	}
 

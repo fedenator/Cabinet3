@@ -19,6 +19,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import net.fpalacios.cabinet.Main;
+import net.fpalacios.cabinet.Loader;
+
 import net.fpalacios.cabinet.flibs.fson.FSON;
 import net.fpalacios.cabinet.flibs.fson.FsonFileManagement;
 
@@ -27,7 +29,6 @@ import net.fpalacios.cabinet.flibs.graphics.Scaller;
 import net.fpalacios.cabinet.flibs.printer.FPrinter;
 
 import net.fpalacios.cabinet.flibs.util.ActionFactory;
-import net.fpalacios.cabinet.flibs.util.Loader;
 import net.fpalacios.cabinet.flibs.util.ErrorHandler;
 
 import net.fpalacios.cabinet.view.components.FilmStripPreview;
@@ -50,8 +51,6 @@ public class FilmStripMaker extends JPanel
 
 	private BufferedImage background;
 
-	private String saveFolder;
-
 	private int printCopies;
 
 	private boolean save;
@@ -72,7 +71,6 @@ public class FilmStripMaker extends JPanel
 			config = FsonFileManagement.loadFsonFile ("config/Config.fson");
 			filmStripModel = FsonFileManagement.loadFsonFile ("rsc/filmStrip/FilmStripModel.fson");
 
-			this.saveFolder = config.getStringValue  ("carpetaDeGuardado");
 			this.save       = config.getBooleanValue ("guardar");
 			this.print      = config.getBooleanValue ("imprimir");
 
@@ -156,7 +154,7 @@ public class FilmStripMaker extends JPanel
 
 			try
 			{
-				Loader.saveImage(filmStripPreview.photos[i], saveFolder + "/" + name, "png");
+				Loader.saveImage(filmStripPreview.photos[i], "photos/" + name, "png");
 			}
 			catch (IOException e)
 			{

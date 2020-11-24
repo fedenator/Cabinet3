@@ -7,8 +7,6 @@ camara = 0;
 delay = 1.0;
 impresiones = 2;
 
-carpetaDeGuardado = "/home/fpalacios/Desktop/SaveFolder";
-
 teclaImprimir   = "p";
 teclaCancelar   = "c";
 teclaSacarFotos = "enter";
