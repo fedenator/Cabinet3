@@ -1,7 +1,6 @@
 package net.fpalacios.cabinet.view.states;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Optional;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -11,16 +10,10 @@ import javax.swing.JLayeredPane;
 import javax.swing.KeyStroke;
 
 import com.github.sarxos.webcam.Webcam;
-import com.github.sarxos.webcam.WebcamResolution;
-import com.github.sarxos.webcam.ds.ipcam.IpCamDevice;
-import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
-import com.github.sarxos.webcam.ds.ipcam.IpCamDriver;
-import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
 
 import net.fpalacios.cabinet.Main;
 import net.fpalacios.cabinet.config.Config;
 import net.fpalacios.cabinet.config.Keybindings;
-import net.fpalacios.cabinet.config.WebcamConfig;
 import net.fpalacios.cabinet.Assets;
 
 import net.fpalacios.cabinet.graphics.animation.AnimationChain;
@@ -64,10 +57,10 @@ public class PhotoSession extends JLayeredPane
 
 	private Config config;
 
-	public PhotoSession(Config config, Keybindings keybindings)
+	public PhotoSession(Config config, Keybindings keybindings, Optional<Webcam> camera)
 	{
 		this.config = config;
-		this.initCamera();
+		this.camera = camera;
 
 		int animationDelayMs = (int) (this.config.delay * 1000);
 		
@@ -144,41 +137,6 @@ public class PhotoSession extends JLayeredPane
 					);
 				} 
 			)
-		);
-	}
-
-	private void initCamera()
-	{
-		if (!this.config.useCamera)
-		{
-			return;
-		}
-
-		WebcamConfig webcamConfig = this.config.webcamConfig;
-
-		Webcam.setDriver(new IpCamDriver());
-		try
-		{
-			IpCamDeviceRegistry.register(
-				new IpCamDevice(
-					webcamConfig.name,
-					webcamConfig.url,
-					webcamConfig.push? IpCamMode.PUSH : IpCamMode.PULL
-				)
-			);
-		}
-		catch (MalformedURLException e)
-		{
-			throw new RuntimeException(e);
-		}
-
-		this.camera = Optional.ofNullable(Webcam.getDefault());
-		this.camera.ifPresent(
-			(c) ->
-			{
-				c.setViewSize(webcamConfig.resolution.getSize());
-				c.open();
-			}
 		);
 	}
 
