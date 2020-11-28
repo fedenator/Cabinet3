@@ -1,0 +1,13 @@
+{
+	"print" : false,
+	"delay" : 3.0,
+	"copies": 2,
+	"useCamera": false,
+	"webcamConfig":
+	{
+		"name": "Celular",
+		"url": "http://192.168.0.101:8080/video",
+		"push": true,
+		"resolution": "HD720"
+	}
+}

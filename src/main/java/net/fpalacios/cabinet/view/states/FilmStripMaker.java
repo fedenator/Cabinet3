@@ -19,17 +19,17 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import net.fpalacios.cabinet.Main;
-import net.fpalacios.cabinet.Loader;
+import net.fpalacios.cabinet.config.Config;
+import net.fpalacios.cabinet.config.Keybindings;
+import net.fpalacios.cabinet.filmStrip.FilmStripLayout;
+import net.fpalacios.cabinet.Assets;
 
-import net.fpalacios.cabinet.flibs.fson.FSON;
-import net.fpalacios.cabinet.flibs.fson.FsonFileManagement;
+import net.fpalacios.cabinet.graphics.Scaller;
 
-import net.fpalacios.cabinet.flibs.graphics.Scaller;
+import net.fpalacios.cabinet.printer.FPrinter;
 
-import net.fpalacios.cabinet.flibs.printer.FPrinter;
-
-import net.fpalacios.cabinet.flibs.util.ActionFactory;
-import net.fpalacios.cabinet.flibs.util.ErrorHandler;
+import net.fpalacios.cabinet.util.AwtActionsUtils;
+import net.fpalacios.cabinet.util.ErrorHandler;
 
 import net.fpalacios.cabinet.view.components.FilmStripPreview;
 import net.fpalacios.cabinet.view.components.ImageDisplayer;
@@ -49,56 +49,39 @@ public class FilmStripMaker extends JPanel
 
 	private FilmStripPreview filmStripPreview;
 
-	private BufferedImage background;
+	private BufferedImage backgroundImage;
 
-	private int printCopies;
+	private Config config;
 
-	private boolean save;
-	private boolean print;
-	private String  printKey;
-	private String  cancelKey;
-
-	public FilmStripMaker(BufferedImage... photos)
+	public FilmStripMaker(Config config, Keybindings keybindings, BufferedImage... photos)
 	{
+		this.config = config;
 
-		FSON config = null;
-		FSON filmStripModel = null;
-
-		BufferedImage buttonImage = null;
-
+		FilmStripLayout filmStripLayout;
+		BufferedImage   buttonImage;
 		try
 		{
-			config = FsonFileManagement.loadFsonFile ("config/Config.fson");
-			filmStripModel = FsonFileManagement.loadFsonFile ("rsc/filmStrip/FilmStripModel.fson");
-
-			this.save       = config.getBooleanValue ("guardar");
-			this.print      = config.getBooleanValue ("imprimir");
-
-			this.printKey  = config.getStringValue("teclaImprimir").toUpperCase();
-			this.cancelKey = config.getStringValue("teclaCancelar").toUpperCase();
-
-			this.printCopies = config.getIntValue("impresiones");
-
-			this.background = Loader.loadBufferedImage( config.getStringValue("BackgroundImage") );
-
-			buttonImage = Loader.loadBufferedImage( config.getStringValue("ButtonImage") );
-		} catch (IOException e)
+			filmStripLayout      = Assets.loadJson("config/FilmStripLayout.json", FilmStripLayout.class);
+			buttonImage          = Assets.loadBufferedImage("assets/Button.png");
+			this.backgroundImage = Assets.loadBufferedImage("assets/Background.jpg");
+		}
+		catch(IOException e)
 		{
-			ErrorHandler.fatal("Error loading FilmStripMaker configuration.", e);
+			throw new RuntimeException("Error al cargar el layout de la tira fotografica", e);
 		}
 
 		/*----------------- Create and show GUI -----------------*/
 		this.setLayout(null);
 
-		ActionFactory.addActionToKeyStroke(this, "cancel", cancelKey, () -> cancel() );
-		ActionFactory.addActionToKeyStroke(this, "print", printKey, () -> printAction() );
+		AwtActionsUtils.addActionToKeyStroke(this, "cancel", keybindings.cancel, () -> cancel() );
+		AwtActionsUtils.addActionToKeyStroke(this, "print" , keybindings.print , () -> print()  );
 
 		this.imageDisplayer1 = new ImageDisplayer(photos[0], 10, 10, 442, 242 );
 		this.imageDisplayer2 = new ImageDisplayer(photos[1], 10, 262, 442, 242);
 		this.imageDisplayer3 = new ImageDisplayer(photos[2], 10, 516, 442, 242);
 
 		this.btnPrint  = new JButton   ("Imprimir");
-		this.btnPrint.addActionListener( a -> printAction() );
+		this.btnPrint.addActionListener( a -> print() );
 		this.btnPrint.setBounds        (1206, 458, 150, 150);
 		this.setUpButton               (this.btnPrint, buttonImage);
 
@@ -109,7 +92,7 @@ public class FilmStripMaker extends JPanel
 
 		try
 		{
-			this.filmStripPreview = new FilmStripPreview(filmStripModel, 654, 10, 499, 748, photos);
+			this.filmStripPreview = new FilmStripPreview(filmStripLayout, 654, 10, 499, 748, photos);
 		}
 		catch (IOException e)
 		{
@@ -128,7 +111,7 @@ public class FilmStripMaker extends JPanel
 
 	private void setUpButton(JButton jbutton, BufferedImage buttonImage)
 	{
-		jbutton.setIcon( new ImageIcon( Scaller.basicScale( buttonImage, jbutton.getWidth(), jbutton.getHeight() ) ) );
+		jbutton.setIcon( new ImageIcon( Scaller.simpleBilinear( buttonImage, jbutton.getWidth(), jbutton.getHeight() ) ) );
 
 		jbutton.setContentAreaFilled      (false);
 		jbutton.setFocusPainted           (false);
@@ -154,7 +137,7 @@ public class FilmStripMaker extends JPanel
 
 			try
 			{
-				Loader.saveImage(filmStripPreview.photos[i], "photos/" + name, "png");
+				Assets.saveImage(filmStripPreview.photos[i], "photos/" + name, "png");
 			}
 			catch (IOException e)
 			{
@@ -163,26 +146,22 @@ public class FilmStripMaker extends JPanel
 		}
 	}
 
-	private void printAction()
-	{
-		if (save)  this.saveImages();
-		if (print) this.print();
-
-		Main.restart();
-	}
-
-	//Imprime las fotos
 	private void print()
 	{
-		for (int i=0; i<printCopies; i++)
+		if (this.config.print)
 		{
-			FPrinter.print(
-				this.filmStripPreview.filmStrip.createPrintableImage(FPrinter.DPI_STANDAR_PRINTER), 10, 15, MediaSize.ISO.A6
-			);
+			for (int i=0; i<this.config.copies; i++)
+			{
+				FPrinter.print(
+					this.filmStripPreview.filmStrip.createPrintableImage(FPrinter.DPI_STANDAR_PRINTER), 10, 15, MediaSize.ISO.A6
+				);
+			}
 		}
 		
+		this.saveImages();
 		Main.restart();
 	}
+
 
 	private void cancel()
 	{
@@ -197,6 +176,6 @@ public class FilmStripMaker extends JPanel
 	protected void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
-		g.drawImage(this.background, 0, 0, this);
+		g.drawImage(this.backgroundImage, 0, 0, this);
 	}
 }

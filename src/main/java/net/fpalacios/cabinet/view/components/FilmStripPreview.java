@@ -7,8 +7,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 
 import net.fpalacios.cabinet.filmStrip.FilmStrip;
-
-import net.fpalacios.cabinet.flibs.fson.FSON;
+import net.fpalacios.cabinet.filmStrip.FilmStripLayout;
 
 import java.io.IOException;
 
@@ -22,16 +21,18 @@ public class FilmStripPreview extends JComponent
 	public BufferedImage[] photos;
 
 	public FilmStripPreview(
-		FSON             filmStripFile,
+		FilmStripLayout  layout,
 		int              x,
 		int              y,
 		int              w,
 		int              h,
 		BufferedImage... photos
-	) throws IOException
+	)
+	throws
+		IOException
 	{
 		this.photos = photos;
-		this.filmStrip = new FilmStrip(filmStripFile, photos);
+		this.filmStrip = new FilmStrip(layout, photos);
 		this.setBounds(x, y, w, h);
 		this.image = filmStrip.createImage( getWidth(), getHeight() );
 	}
@@ -41,6 +42,5 @@ public class FilmStripPreview extends JComponent
 	{
 		super.paintComponent(g);
 		g.drawImage(this.image, 0, 0, this);
-
 	}
 }

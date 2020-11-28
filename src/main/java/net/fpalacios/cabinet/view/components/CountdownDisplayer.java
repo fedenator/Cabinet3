@@ -10,8 +10,8 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 
-import net.fpalacios.cabinet.flibs.graphics.Util;
-import net.fpalacios.cabinet.flibs.graphics.animation.CodedAnimation;
+import net.fpalacios.cabinet.graphics.Util;
+import net.fpalacios.cabinet.graphics.animation.CodedAnimation;
 
 public class CountdownDisplayer extends JComponent
 {

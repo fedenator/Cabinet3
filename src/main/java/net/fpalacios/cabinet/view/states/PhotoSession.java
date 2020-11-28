@@ -18,18 +18,17 @@ import com.github.sarxos.webcam.ds.ipcam.IpCamDriver;
 import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
 
 import net.fpalacios.cabinet.Main;
-import net.fpalacios.cabinet.Loader;
+import net.fpalacios.cabinet.config.Config;
+import net.fpalacios.cabinet.config.Keybindings;
+import net.fpalacios.cabinet.config.WebcamConfig;
+import net.fpalacios.cabinet.Assets;
 
-import net.fpalacios.cabinet.flibs.fson.FSON;
-import net.fpalacios.cabinet.flibs.fson.FsonFileManagement;
+import net.fpalacios.cabinet.graphics.animation.AnimationChain;
+import net.fpalacios.cabinet.graphics.animation.CodedAnimation;
+import net.fpalacios.cabinet.graphics.animation.ParallelAnimation;
+import net.fpalacios.cabinet.graphics.animation.ScriptAnimation;
 
-import net.fpalacios.cabinet.flibs.graphics.animation.AnimationChain;
-import net.fpalacios.cabinet.flibs.graphics.animation.CodedAnimation;
-import net.fpalacios.cabinet.flibs.graphics.animation.ParallelAnimation;
-import net.fpalacios.cabinet.flibs.graphics.animation.ScriptAnimation;
-
-import net.fpalacios.cabinet.flibs.util.ActionFactory;
-import net.fpalacios.cabinet.flibs.util.ErrorHandler;
+import net.fpalacios.cabinet.util.AwtActionsUtils;
 import net.fpalacios.cabinet.view.components.CameraPreview;
 import net.fpalacios.cabinet.view.components.CountdownDisplayer;
 import net.fpalacios.cabinet.view.components.FlashingGlassPane;
@@ -42,10 +41,10 @@ public class PhotoSession extends JLayeredPane
 {
 	private static final long serialVersionUID = -3298912502204354233L;
 
-	private long delay;
+	// Imagen en caso de que no se puedan sacar fotos con la camara
+	private final BufferedImage defaultImage;
 
-	private final BufferedImage defaultImage;            // Imagen en caso de que no se puedan sacar fotos con la camara
-	private Optional<Webcam> camera;
+	private Optional<Webcam> camera = Optional.empty();
 
 	// Displayeres para las fotos que se sacan
 	private CameraPreview cameraPreview;
@@ -63,46 +62,45 @@ public class PhotoSession extends JLayeredPane
 
 	private BufferedImage backgroundImage;
 
-	public PhotoSession()
+	private Config config;
+
+	public PhotoSession(Config config, Keybindings keybindings)
 	{
-		FSON config = null;
-		String takePhotosKey = null;
+		this.config = config;
 		this.initCamera();
 
-		//Load configuration
+		int animationDelayMs = (int) (this.config.delay * 1000);
+		
 		try
 		{
-			config = FsonFileManagement.loadFsonFile("config/Config.fson");
-			takePhotosKey = config.getStringValue("teclaSacarFotos").toUpperCase();
-			this.delay = (int)config.getDoubleValue("delay") * CodedAnimation.SECOND;
-			this.defaultImage = Loader.loadBufferedImage( config.getStringValue("PhotoDisplayerDefault") );
-			this.backgroundImage = Loader.loadBufferedImage( config.getStringValue("BackgroundImage") );
+			defaultImage         = Assets.loadBufferedImage("assets/Default.jpg");
+			this.backgroundImage = Assets.loadBufferedImage("assets/Background.jpg");
 		}
-		catch (IOException e)
+		catch(IOException e)
 		{
-			ErrorHandler.fatal("Error loading PhotoSession configuration.", e);
-			throw new RuntimeException();
+			throw new RuntimeException("Error al cargar assets", e);
 		}
-
+		
 		/*------------------------------ Crea y agrega el GUI --------------------------------*/
 		this.fglassPane = new FlashingGlassPane();
 		Main.setGlassPane(this.fglassPane);
 
 		this.setLayout(null);
 
-		ActionFactory.addActionToKeyStroke(this, "takePhotos", takePhotosKey, () -> this.takePhotos() );
+		AwtActionsUtils.addActionToKeyStroke(this, "takePhotos", keybindings.takePhotos, () -> this.takePhotos() );
 
-		this.getInputMap().put(KeyStroke.getKeyStroke(takePhotosKey), "takePhotos");
-		this.getActionMap().put( "takePhotos", ActionFactory.basic( () -> this.takePhotos() ) );
+		this.getInputMap().put(KeyStroke.getKeyStroke(keybindings.takePhotos), "takePhotos");
+		this.getActionMap().put( "takePhotos", AwtActionsUtils.basic( () -> this.takePhotos() ) );
 
 		this.photoDisplayer1 = new PhotoDisplayer(this, this.defaultImage, 10, 10, 442, 242);
 		this.photoDisplayer2 = new PhotoDisplayer(this, this.defaultImage, 10, 262, 442, 242);
 		this.photoDisplayer3 = new PhotoDisplayer(this, this.defaultImage, 10, 516, 442, 242);
 		this.cameraPreview = new CameraPreview(this, camera, this.defaultImage, 462, 10, 894, 748);
+
 		this.countdownDisplayer = new CountdownDisplayer(
-			this.delay,
-			(int) (Main.getWidth()  / 2 - 200 / 2),
-			(int) (Main.getHeight() / 2 - 200 / 2),
+			animationDelayMs,
+			(int) (Main.window.getWidth()  / 2 - 200 / 2),
+			(int) (Main.window.getHeight() / 2 - 200 / 2),
 			200,
 			200
 		);
@@ -110,7 +108,7 @@ public class PhotoSession extends JLayeredPane
 		this.add(photoDisplayer1, photoDisplayer2, photoDisplayer3, cameraPreview);
 		this.add(countdownDisplayer, POPUP_LAYER);
 
-		this.countdown = new CodedAnimation(60, delay);
+		this.countdown = new CodedAnimation(60, animationDelayMs);
 
 		this.countdown.addSetup( () -> countdownDisplayer.restart() );
 
@@ -120,15 +118,15 @@ public class PhotoSession extends JLayeredPane
 		this.animation = new AnimationChain(
 			this.countdown,
 			new ParallelAnimation(
-					new ScriptAnimation(() -> this.photoDisplayer1.image = this.takeWebcamSnapshot()),
-					this.photoDisplayer1.animation,
-					this.fglassPane.animation
+				new ScriptAnimation(() -> this.photoDisplayer1.image = this.takeWebcamSnapshot()),
+				this.photoDisplayer1.animation,
+				this.fglassPane.animation
 			),
 			this.countdown,
 			new ParallelAnimation(
-					new ScriptAnimation(() -> this.photoDisplayer2.image = this.takeWebcamSnapshot()),
-					this.photoDisplayer2.animation,
-					this.fglassPane.animation
+				new ScriptAnimation(() -> this.photoDisplayer2.image = this.takeWebcamSnapshot()),
+				this.photoDisplayer2.animation,
+				this.fglassPane.animation
 			),
 			this.countdown,
 			new ParallelAnimation(
@@ -151,27 +149,35 @@ public class PhotoSession extends JLayeredPane
 
 	private void initCamera()
 	{
+		if (!this.config.useCamera)
+		{
+			return;
+		}
+
+		WebcamConfig webcamConfig = this.config.webcamConfig;
+
 		Webcam.setDriver(new IpCamDriver());
 		try
 		{
-			IpCamDeviceRegistry.register(new IpCamDevice("Celular", "http://192.168.0.101:8080/video", IpCamMode.PUSH));
+			IpCamDeviceRegistry.register(
+				new IpCamDevice(
+					webcamConfig.name,
+					webcamConfig.url,
+					webcamConfig.push? IpCamMode.PUSH : IpCamMode.PULL
+				)
+			);
 		}
 		catch (MalformedURLException e)
 		{
 			throw new RuntimeException(e);
 		}
 
-
 		this.camera = Optional.ofNullable(Webcam.getDefault());
-		System.out.println("camera: " + camera);
 		this.camera.ifPresent(
 			(c) ->
 			{
-				System.out.println("a");
-				c.setViewSize(WebcamResolution.HD720.getSize());
-				System.out.println("b");
+				c.setViewSize(webcamConfig.resolution.getSize());
 				c.open();
-				System.out.println("c");
 			}
 		);
 	}

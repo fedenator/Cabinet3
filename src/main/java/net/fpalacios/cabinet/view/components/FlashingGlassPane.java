@@ -8,8 +8,8 @@ import java.awt.Rectangle;
 
 import javax.swing.JComponent;
 
-import net.fpalacios.cabinet.flibs.graphics.animation.AnimationChain;
-import net.fpalacios.cabinet.flibs.graphics.animation.CodedAnimation;
+import net.fpalacios.cabinet.graphics.animation.AnimationChain;
+import net.fpalacios.cabinet.graphics.animation.CodedAnimation;
 
 /**
  * Un panel arriba de todos los componentes que hace un efecto de flash

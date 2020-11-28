@@ -2,15 +2,23 @@ package net.fpalacios.cabinet;
 
 import java.awt.*;
 import javax.swing.*;
-import java.awt.image.*;
 
+import java.awt.image.*;
+import java.io.IOException;
+
+import net.fpalacios.cabinet.config.Config;
+import net.fpalacios.cabinet.config.Keybindings;
 import net.fpalacios.cabinet.view.states.*;
 
 public class Main
 {
-	// Ventana principal de la aplicacion
-	private static JFrame     window;
 	private static JComponent currentPanel;
+	
+	public static JFrame window;
+
+	// Configs
+	public static Config      config;
+	public static Keybindings keybindings;
 
 	public static void changePanel(JComponent panel)
 	{
@@ -40,28 +48,32 @@ public class Main
 
 	public static void restart()
 	{
-		changePanel(new PhotoSession());
+		changePanel(new PhotoSession(config, keybindings));
 	}
 
 	public static void makeFilmStrip(BufferedImage photo1, BufferedImage photo2, BufferedImage photo3)
 	{
-		changePanel(new FilmStripMaker(photo1, photo2, photo3));
+		changePanel(new FilmStripMaker(config, keybindings, photo1, photo2, photo3));
 	}
 
-	/*--------------------------------- Getters y Setters --------------------------------------*/
-	public static int getWidth()
+	private static void loadConfig()
 	{
-		return window.getWidth();
-	}
-
-	public static int getHeight()
-	{
-		return window.getHeight();
+		try
+		{
+			config      = Assets.loadJson("config/Config.json"     , Config.class     );
+			keybindings = Assets.loadJson("config/Keybindings.json", Keybindings.class);
+		}
+		catch(IOException e)
+		{
+			throw new RuntimeException("No se pudieron cargar los archivos de configuracion");
+		}
 	}
 
 	public static void main(String[] args)
 	{
 		System.setProperty("sun.java2d.opengl", "true");
+		
+		loadConfig();
 
 		EventQueue.invokeLater(
 			() ->

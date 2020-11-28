@@ -3,7 +3,7 @@ package net.fpalacios.cabinet.filmStrip;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-import net.fpalacios.cabinet.flibs.util.FMath;
+import net.fpalacios.cabinet.util.FMath;
 
 /**
  * Reprecenta un elemento de una tira de fotos

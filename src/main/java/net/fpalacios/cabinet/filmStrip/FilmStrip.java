@@ -7,10 +7,9 @@ import java.awt.image.BufferedImage;
 
 import java.util.ArrayList;
 
-import net.fpalacios.cabinet.flibs.fson.FSON;
 
-import net.fpalacios.cabinet.flibs.util.FMath;
-import net.fpalacios.cabinet.Loader;
+import net.fpalacios.cabinet.util.FMath;
+import net.fpalacios.cabinet.Assets;
 
 import java.io.IOException;
 
@@ -20,60 +19,42 @@ import java.io.IOException;
 public class FilmStrip
 {
 	//El archivo donde esta el modelo de la tira
-	private FSON model;
+	private FilmStripLayout layout;
 
 	//Lista de elemntos que conforman la tira
 	private ArrayList<FilmStripElement> elements = new ArrayList<FilmStripElement>();
 
 	//Tamaño en cm
-	private double width, height;
+	private float width, height;
 
 	//Crea una tira de fotos con el modelo y las fotos dadas
-	public FilmStrip(FSON model, BufferedImage[] photos) throws IOException
-	{
-		this.model = model;
+	public FilmStrip(FilmStripLayout layout, BufferedImage[] photos) throws IOException
+	{ 
+		this.layout = layout;
 		this.loadElements(photos);
 	}
 
 	private void loadElements(BufferedImage[] photos) throws IOException
 	{
-		this.width  = model.getDoubleValue("Width");
-		this.height = model.getDoubleValue("Height");
+		this.width  = layout.width;
+		this.height = layout.height;
 
-		//Carga el fondo si hay
-		if (this.model.hasKey("Background"))
-		{
-			BufferedImage img = Loader.loadBufferedImage( model.getStringValue("Background") );
-			this.elements.add( new FilmStripElement(img, 0, 0, 100, 100) );
-		}
+		BufferedImage background = Assets.loadBufferedImage("assets/film_strip/Background.jpg");
+		this.elements.add( new FilmStripElement(background, 0, 0, 100, 100) );
 
 		//Carga los elementos
-		FSON components[] = this.model.getDirectSubElements();
 		int photosUsed = 0; //Contador de fotos usadas
-		for (FSON comp : components)
+		for (FilmStripLayout.Rectangle rect : this.layout.photos)
 		{
-			if( comp.getTag().equals("Image") )
-			{
-				double percentX = comp.getDoubleValue("x");
-				double percentY = comp.getDoubleValue("y");
-				double percentW = comp.getDoubleValue("width");
-				double percentH = comp.getDoubleValue("height");
+			float percentY = rect.y;
+			float percentX = rect.x;
+			float percentW = rect.w;
+			float percentH = rect.h;
 
-				BufferedImage img = null;
-				//Si el elemento tiene el atributo src es que es una imagen predefinida
-				if ( comp.hasDirectKey("src") )
-				{
-					img = Loader.loadBufferedImage( comp.getStringValue("src") );
-				}
-				//Si no hay que usar una foto que se saco el usuario
-				else
-				{
-					img = photos[photosUsed];
-					photosUsed++;
-				}
+			BufferedImage img = photos[photosUsed];
+			photosUsed += 1;
 
-				this.elements.add(new FilmStripElement(img, percentX, percentY, percentW, percentH));
-			}
+			this.elements.add(new FilmStripElement(img, percentX, percentY, percentW, percentH));
 		}
 	}
 

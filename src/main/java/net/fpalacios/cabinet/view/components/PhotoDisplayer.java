@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 
-import net.fpalacios.cabinet.flibs.graphics.animation.CodedAnimation;
+import net.fpalacios.cabinet.graphics.animation.CodedAnimation;
 import net.fpalacios.cabinet.view.states.PhotoSession;
 
 /**
